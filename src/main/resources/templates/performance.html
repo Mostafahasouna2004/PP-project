@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance - Big Data ETL</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="navbar">
+    <a href="/" class="brand">Big<span>Data</span> ETL</a>
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/performance" class="active">Performance</a>
+    </nav>
+</div>
+
+<div class="container">
+    <div class="hero">
+        <h1>Performance Comparison</h1>
+        <p>Single-Thread vs Multi-Thread Processing Benchmark</p>
+    </div>
+
+    <!-- Quick Test Buttons -->
+    <div class="card">
+        <h3>Run Benchmark Tests</h3>
+        <p style="color: #9ca3af; margin-bottom: 1rem;">
+            Run the same dataset with single-thread and multi-thread to compare performance.
+        </p>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <form method="post" action="/generate-and-process" style="display: inline;">
+                <input type="hidden" name="recordCount" value="10000">
+                <input type="hidden" name="multiThreaded" value="false">
+                <button type="submit" class="btn btn-secondary">10K Records - Single Thread</button>
+            </form>
+            <form method="post" action="/generate-and-process" style="display: inline;">
+                <input type="hidden" name="recordCount" value="10000">
+                <input type="hidden" name="multiThreaded" value="true">
+                <button type="submit" class="btn btn-primary">10K Records - Multi Thread</button>
+            </form>
+            <form method="post" action="/generate-and-process" style="display: inline;">
+                <input type="hidden" name="recordCount" value="100000">
+                <input type="hidden" name="multiThreaded" value="false">
+                <button type="submit" class="btn btn-secondary">100K Records - Single Thread</button>
+            </form>
+            <form method="post" action="/generate-and-process" style="display: inline;">
+                <input type="hidden" name="recordCount" value="100000">
+                <input type="hidden" name="multiThreaded" value="true">
+                <button type="submit" class="btn btn-primary">100K Records - Multi Thread</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card" th:if="${comparison != null and comparison.jobs != null and not #lists.isEmpty(comparison.jobs)}">
+        <h3>Benchmark Results</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Batch ID</th>
+                        <th>File</th>
+                        <th>Mode</th>
+                        <th>Threads</th>
+                        <th>Records</th>
+                        <th>Preprocessing</th>
+                        <th>ETL</th>
+                        <th>Total Time</th>
+                        <th>Throughput</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="job : ${comparison.jobs}">
+                        <td th:text="${job.batchId}"></td>
+                        <td th:text="${job.fileName}"></td>
+                        <td>
+                            <span th:if="${job.mode == 'MULTI_THREAD'}" class="badge badge-multi">Multi</span>
+                            <span th:if="${job.mode == 'SINGLE_THREAD'}" class="badge badge-single">Single</span>
+                        </td>
+                        <td th:text="${job.threads}"></td>
+                        <td th:text="${#numbers.formatInteger(job.totalRecords, 1, 'COMMA')}"></td>
+                        <td th:text="${job.preprocessingMs + ' ms'}"></td>
+                        <td th:text="${job.etlMs + ' ms'}"></td>
+                        <td th:text="${job.totalMs + ' ms'}"></td>
+                        <td th:text="${job.recordsPerSecond + ' rec/s'}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Visual Comparison -->
+    <div class="card" th:if="${comparison != null and comparison.jobs != null and #lists.size(comparison.jobs) >= 2}">
+        <h3>Visual Comparison (Preprocessing Time)</h3>
+        <div class="chart-container">
+            <div class="bar-chart">
+                <div class="bar-row" th:each="job : ${comparison.jobs}">
+                    <span class="bar-label" th:text="${job.mode == 'MULTI_THREAD' ? 'Multi (' + job.threads + 't)' : 'Single'}"></span>
+                    <div class="bar-track">
+                        <div th:classappend="${job.mode == 'MULTI_THREAD' ? '' : 'orange'}"
+                             class="bar-fill"
+                             th:style="'width: ' + ${job.preprocessingMs * 100 / #aggregates.max(comparison.jobs.![preprocessingMs])} + '%'"
+                             th:text="${job.preprocessingMs + ' ms (' + job.totalRecords + ' records)'}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${comparison == null or comparison.jobs == null or #lists.isEmpty(comparison.jobs)}">
+        <h3>No Benchmark Data Yet</h3>
+        <p style="color: #9ca3af;">
+            Run some processing jobs from the Dashboard or use the quick test buttons above to see performance comparisons.
+        </p>
+    </div>
+
+    <!-- Architecture Info -->
+    <div class="card">
+        <h3>System Architecture</h3>
+        <table>
+            <tr><td style="color: #a78bfa;">Parallelism Model</td><td>ExecutorService with Fixed Thread Pool</td></tr>
+            <tr><td style="color: #a78bfa;">Default Thread Count</td><td>8 threads</td></tr>
+            <tr><td style="color: #a78bfa;">Chunk Size</td><td>10,000 records per chunk</td></tr>
+            <tr><td style="color: #a78bfa;">ETL Framework</td><td>Spring Batch (Reader-Processor-Writer)</td></tr>
+            <tr><td style="color: #a78bfa;">Connection Pool</td><td>HikariCP (20 max connections)</td></tr>
+            <tr><td style="color: #a78bfa;">Database</td><td>H2 (embedded) / MySQL compatible</td></tr>
+        </table>
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+<footer>
+    Big Data ETL &amp; Analytics System | Java 17 + Spring Boot + Spring Batch + Multi-Threading
+</footer>
+
+</body>
+</html>

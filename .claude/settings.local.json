@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/java\" -version)",
+      "Bash(export JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\")",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
+      "Bash(java -jar .mvn/wrapper/maven-wrapper.jar)",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$HOME/.m2/wrapper/apache-maven-3.9.6/bin:$PATH\")",
+      "Bash(mvn compile:*)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w %{http_code} http://localhost:8080/)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w %{http_code} http://127.0.0.1:8080/)"
+    ]
+  }
+}

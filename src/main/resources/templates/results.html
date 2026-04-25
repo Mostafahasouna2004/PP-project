@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Big Data ETL</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="navbar">
+    <a href="/" class="brand">Big<span>Data</span> ETL</a>
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/performance">Performance</a>
+    </nav>
+</div>
+
+<div class="container">
+    <h1 style="margin-bottom: 0.5rem;">Processing Results</h1>
+    <p style="color: #9ca3af; margin-bottom: 2rem;">
+        Batch: <strong th:text="${job.batchId}" style="color: #6c8fff;"></strong> |
+        File: <strong th:text="${job.fileName}"></strong>
+    </p>
+
+    <!-- Stats Overview -->
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value" th:text="${job.totalRecords != null ? #numbers.formatInteger(job.totalRecords, 1, 'COMMA') : '0'}"></div>
+            <div class="stat-label">Total Records</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="-webkit-text-fill-color: #34d399;" th:text="${job.validRecords != null ? #numbers.formatInteger(job.validRecords, 1, 'COMMA') : '0'}"></div>
+            <div class="stat-label">Valid Records</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="-webkit-text-fill-color: #f87171;" th:text="${job.invalidRecords != null ? #numbers.formatInteger(job.invalidRecords, 1, 'COMMA') : '0'}"></div>
+            <div class="stat-label">Invalid Records</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" th:text="${job.preprocessingTimeMs != null ? job.preprocessingTimeMs + 'ms' : '-'}"></div>
+            <div class="stat-label">Preprocessing Time</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" th:text="${job.etlTimeMs != null ? job.etlTimeMs + 'ms' : '-'}"></div>
+            <div class="stat-label">ETL Time</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" th:text="${job.totalTimeMs != null ? job.totalTimeMs + 'ms' : '-'}"></div>
+            <div class="stat-label">Total Time</div>
+        </div>
+    </div>
+
+    <!-- Processing Info -->
+    <div class="card">
+        <h3>Processing Details</h3>
+        <table>
+            <tr>
+                <td style="color: #a78bfa;">Mode</td>
+                <td>
+                    <span th:if="${job.processingMode == 'MULTI_THREAD'}" class="badge badge-multi"
+                          th:text="'Multi-Threaded (' + ${job.threadCount} + ' threads)'"></span>
+                    <span th:if="${job.processingMode == 'SINGLE_THREAD'}" class="badge badge-single">Single Thread</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="color: #a78bfa;">Status</td>
+                <td>
+                    <span th:if="${job.status == 'COMPLETED'}" class="badge badge-completed">Completed</span>
+                    <span th:if="${job.status == 'FAILED'}" class="badge badge-failed">Failed</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="color: #a78bfa;">Started At</td>
+                <td th:text="${job.startedAt}"></td>
+            </tr>
+            <tr>
+                <td style="color: #a78bfa;">Completed At</td>
+                <td th:text="${job.completedAt}"></td>
+            </tr>
+            <tr th:if="${job.totalRecords != null and job.totalTimeMs != null and job.totalTimeMs > 0}">
+                <td style="color: #a78bfa;">Throughput</td>
+                <td th:text="${#numbers.formatInteger(job.totalRecords * 1000 / job.totalTimeMs, 1, 'COMMA') + ' records/second'}"></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Analytics Section (only if completed) -->
+    <div th:if="${analytics != null}">
+
+        <!-- Department Stats -->
+        <div class="card" th:if="${analytics.departmentStats != null}">
+            <h3>Department Statistics</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Employees</th>
+                            <th>Avg Salary</th>
+                            <th>Min Salary</th>
+                            <th>Max Salary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="dept : ${analytics.departmentStats}">
+                            <td th:text="${dept.department}"></td>
+                            <td th:text="${dept.count}"></td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(dept.avgSalary, 1, 'COMMA', 2, 'POINT')}"></td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(dept.minSalary, 1, 'COMMA', 2, 'POINT')}"></td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(dept.maxSalary, 1, 'COMMA', 2, 'POINT')}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <!-- Salary Grade Distribution -->
+            <div class="card" th:if="${analytics.salaryGrades != null}">
+                <h3>Salary Grade Distribution</h3>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar-row" th:each="entry : ${analytics.salaryGrades}">
+                            <span class="bar-label" th:text="${entry.key}"></span>
+                            <div class="bar-track">
+                                <div class="bar-fill"
+                                     th:style="'width: ' + ${entry.value * 100 / analytics.totalProcessedRecords} + '%'"
+                                     th:text="${entry.value}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Country Distribution -->
+            <div class="card" th:if="${analytics.countryDistribution != null}">
+                <h3>Country Distribution</h3>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar-row" th:each="entry : ${analytics.countryDistribution}">
+                            <span class="bar-label" th:text="${entry.key}"></span>
+                            <div class="bar-track">
+                                <div class="bar-fill green"
+                                     th:style="'width: ' + ${entry.value * 100 / analytics.totalProcessedRecords} + '%'"
+                                     th:text="${entry.value}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avg Salary by Department Chart -->
+        <div class="card" th:if="${analytics.avgSalaryByDepartment != null}">
+            <h3>Average Salary by Department</h3>
+            <div class="chart-container">
+                <div class="bar-chart">
+                    <div class="bar-row" th:each="entry : ${analytics.avgSalaryByDepartment}">
+                        <span class="bar-label" th:text="${entry.key}"></span>
+                        <div class="bar-track">
+                            <div class="bar-fill orange"
+                                 th:style="'width: ' + ${entry.value * 100 / 200000} + '%'"
+                                 th:text="'$' + ${#numbers.formatDecimal(entry.value, 1, 'COMMA', 0, 'POINT')}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+        <a href="/performance" class="btn btn-primary" style="margin-left: 1rem;">View Performance Comparison</a>
+    </div>
+</div>
+
+<footer>
+    Big Data ETL &amp; Analytics System | Java 17 + Spring Boot + Spring Batch + Multi-Threading
+</footer>
+
+</body>
+</html>

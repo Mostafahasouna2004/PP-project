@@ -1,0 +1,15 @@
+target/
+data/
+*.class
+*.jar
+*.war
+*.log
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+*~
+.DS_Store
